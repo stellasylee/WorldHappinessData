@@ -1,0 +1,114 @@
+---
+title: "STA 230 Project 1"
+author: "Stella Lee, Tanvi Jindal"
+date: "2/15/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(maps)     # Provides latitude and longitude data for various maps
+```
+
+## Research Question
+
+How does a country’s happiness score get influenced by the following factors:
+  1.  GDP per capita
+  2. Life Expectancy
+  3. Trust in the government
+  4. Region
+
+Does time have an effect on this?
+
+Data Source: World Happiness Report 
+https://www.kaggle.com/unsdsn/world-happiness
+
+## Upload data
+```{r}
+happy15 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/Happiness2015.csv")
+#head (happy15)
+
+happy16 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/Happiness2016.csv")
+#head(happy16)
+
+happy17 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/Happiness2017.csv")
+#head (happy17)
+```
+
+## Data Cleaning
+```{r}
+# Select the columns that we are going to use and change the name of columns
+happy_15 <- select(happy15, Country, Region, Happiness.Score, Economy..GDP.per.Capita., Health..Life.Expectancy., Trust..Government.Corruption.)
+names(happy_15) <- c("Country", "Region", "Happiness15", "GDP15", "Health15", "Trust15")
+happy_16 <- select(happy16, Country, Happiness.Score, Economy..GDP.per.Capita., Health..Life.Expectancy., Trust..Government.Corruption.)
+names(happy_16) <- c("Country", "Happiness16", "GDP16", "Health16", "Trust16")
+happy_17 <- select(happy17, Country, Happiness.Score, Economy..GDP.per.Capita., Health..Life.Expectancy., Trust..Government.Corruption.)
+names(happy_17) <- c("Country", "Happiness17", "GDP17", "Health17", "Trust17")
+happy_17$Country <- as.character(happy_17$Country)
+happy_17$Country[happy_17$Country == "Hong Kong S.A.R., China"] <- "Hong Kong" 
+happy_17$Country[happy_17$Country == "Taiwan Province of China"] <- "Taiwan" 
+happy_16$Country <- as.character(happy_16$Country)
+happy_15$Country <- as.character(happy_15$Country)
+```
+
+## Merge the data to one dataframe
+```{r}
+happy_total <- full_join(x=happy_15, y= happy_16, by = "Country")
+happy_total <- full_join(x=happy_total, y= happy_17, by = "Country")
+happy_total <- happy_total[complete.cases(happy_total), ]
+
+#happy_total <- arrange(happy_total, Country)
+happy_total <- gather(data=happy_total, key = year, value = Index, 3:14)
+happy_total <- separate(happy_total, year, into= c("variable", "year"), sep = -3)
+happy_total$year<- paste0("20", happy_total$year)
+happy_total <- spread (data = happy_total, key = variable, value = Index)
+happy_total$Country[happy_total$Country == "Congo (Brazzaville)"] <- "Republic of Congo" 
+happy_total$Country[happy_total$Country == "Congo (Kinshasa)"] <- "Democratic Republic of the Congo"
+happy_total$Country[happy_total$Country == "Palestinian Territories"] <- "Palestine"
+
+
+```
+
+## Visualization
+```{r}
+# Map with region and Happiness
+World <- map_data("world")
+ggplot() + 
+  geom_polygon( data=World, aes(x=long, y=lat, group=group),
+                color="black", fill="lightblue" )
+names(World) <- c("long", "lat", "group", "order", "Country", "subregion")
+World$Country[World$Country == "USA"] <- "United States" 
+World$Country[World$Country == "UK"] <- "United Kingdom" 
+World$Country[World$subregion == "Hong Kong"] <- "Hong Kong" 
+World$Country[World$subregion == "Northern Cyprus"] <- "North Cyprus" 
+World$Country[World$Country == "Trinidad" |World$Country == "Tobago" ] <- "Trinidad and Tobago" 
+MergedData <- inner_join(World, happy_total, by = "Country")
+
+final15 <- filter(happy_total, year == "2015")
+final16 <- filter(happy_total, year == "2016")
+final17 <- filter(happy_total, year == "2017")
+
+map15 <- inner_join(World, final15, by = "Country")
+map16 <- inner_join(World, final16, by = "Country")
+map17 <- inner_join(World, final17, by = "Country")
+```
+```{r}
+p <- ggplot()
+GDPMap15 <- p + geom_polygon( data=map15, 
+          aes(x=long, y=lat, group=group, fill = GDP), 
+          color="white", size = 0.2) + scale_fill_gradientn(colours = rainbow(6))
+happyMap15 <- p + geom_polygon( data=map15, 
+          aes(x=long, y=lat, group=group, fill = Happiness), 
+          color="white", size = 0.2) + scale_fill_gradientn(colours = rainbow(6))
+GDPMap15
+happyMap15
+
+```
+ 
