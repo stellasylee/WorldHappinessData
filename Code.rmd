@@ -10,6 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(ggplot2)
 library(readr)
 library(dplyr)
@@ -18,7 +19,6 @@ library(maps)     # Provides latitude and longitude data for various maps
 ```
 
 ## Research Question
-
 How does a country’s happiness score get influenced by the following factors:
   1.  GDP per capita
   2. Life Expectancy
@@ -39,9 +39,12 @@ variables <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappin
 
 
 ```
+
 ## Data Cleaning
 ```{r}
 # Select the columns that we are going to use and change the name of columns
+# Set country names as identical for every data
+# 2009
 happy09 <- select(happy09, country, HPI, GDP.per.capita....PPP.)
 names(happy09) <- c("country", "HPI09", "GDP09")
 happy09$country <- as.character(happy09$country)
@@ -50,16 +53,20 @@ happy09$country[happy09$country == "Korea"] <- "South Korea"
 happy09$country[happy09$country == "Congo"] <- "Republic of Congo" 
 happy09$country[happy09$country == "Congo, Dem. Rep. of the"] <- "Democratic Republic of the Congo"
 
+# 2012
 happy12 <- select(happy12, Country, Happy.Planet.Index, GDP.capita...PPP.)
 names(happy12) <- c("country", "HPI12", "GDP12")
 happy12$country <- as.character(happy12$country)
 happy12$country[happy12$country == "Korea"] <- "South Korea"
 happy12$country[happy12$country == "Congo"] <- "Republic of Congo" 
 happy12$country[happy12$country == "Congo, Dem. Rep. of the"] <- "Democratic Republic of the Congo"
+
+# 2016
 happy16 <- select(happy16, Country, Region, Happy.Planet.Index, X.GDP.capita...PPP.. )
 names(happy16) <- c("country","region","HPI16", "GDP16")
 happy16$country <- as.character(happy16$country)
 
+# variables
 variables <- filter(variables, year == "2009" | year == "2012" | year == "2016")
 var <- select (variables, country, year, Healthy.life.expectancy.at.birth, Perceptions.of.corruption)
 names(var) <- c("country", "year", "lifeExpect", "corruption") 
@@ -70,7 +77,11 @@ var$country[var$country == "Congo (Kinshasa)"] <- "Democratic Republic of the Co
 var$country[var$country == "Hong Kong S.A.R. of China"] <- "Hong Kong"
 var$country[var$country == "United States"] <- "United States of America"
 var$country[var$country == "Palestinian Territories"] <- "Palestine"
+```
 
+## Data Merging  
+```{r}
+# Combine
 happy <- full_join(x=happy16, y=happy12, by = "country")
 happy <- full_join(x=happy, y=happy09, by = "country")
 happy$country[happy09$country == "Burma"] <- "Myanmar"
@@ -78,26 +89,30 @@ happy$GDP09 <- parse_number(happy$GDP09)
 happy$GDP12 <- parse_number(happy$GDP12)
 happy$GDP16 <- parse_number(happy$GDP16)
 #happy <- happy[complete.cases(happy), ]
-happy <- gather(data=happy, key = year, value = Index, 3:8)
-happy <- separate(happy, year, into= c("variable", "year"), sep = -3)
-happy$year<- paste0("20", happy$year)
-happy <- spread (data = happy, key = variable, value = Index)
-happy <- left_join(x=happy, y=var, by = c("country", "year"))
 ```
 
+## Tidy Data
+```{r}
+happy <- gather(data = happy, key = year, value = Index, 3:8)
+happy <- separate(happy, year, into = c("variable", "year"), sep = -3)
+happy$year<- paste0("20", happy$year)
+happy <- spread (data = happy, key = variable, value = Index)
+happy <- left_join(x = happy, y = var, by = c("country", "year"))
+``` 
 
 ## Visualization
 ```{r}
 # Map with region and Happiness
+# Base world map
 World <- map_data("world")
-ggplot() + 
-  geom_polygon( data=World, aes(x=long, y=lat, group=group),
-                color="black", fill="lightblue" )
+# Change the column and row for matching with the Happiness dataset
 names(World) <- c("long", "lat", "group", "order", "country", "subregion")
 World$country[World$country == "USA"] <- "United States of America" 
 World$country[World$country == "UK"] <- "United Kingdom" 
 World$country[World$subregion == "Hong Kong"] <- "Hong Kong" 
 World$country[World$country == "Trinidad" |World$country == "Tobago" ] <- "Trinidad and Tobago" 
+
+# Join the map, happiness data for visualization
 final <- full_join(World, happy, by = "country")
 final09 <- filter(happy, year == "2009")
 final12 <- filter(happy, year == "2012")
@@ -107,6 +122,8 @@ map09 <- full_join(World, final09, by = "country")
 map12 <- full_join(World, final12, by = "country")
 map16 <- full_join(World, final16, by = "country")
 ```
+
+# GDP and HPI
 ```{r}
 p <- ggplot()
 GDPMap09 <- p + geom_polygon(data=map09, 
