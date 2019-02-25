@@ -47,9 +47,15 @@ names(happy09) <- c("country", "HPI09", "GDP09")
 happy09$country <- as.character(happy09$country)
 happy09$country[happy09$country == "Burma"] <- "Myanmar"
 happy09$country[happy09$country == "Korea"] <- "South Korea"
+happy09$country[happy09$country == "Congo"] <- "Republic of Congo" 
+happy09$country[happy09$country == "Congo, Dem. Rep. of the"] <- "Democratic Republic of the Congo"
+
 happy12 <- select(happy12, Country, Happy.Planet.Index, GDP.capita...PPP.)
 names(happy12) <- c("country", "HPI12", "GDP12")
 happy12$country <- as.character(happy12$country)
+happy12$country[happy12$country == "Korea"] <- "South Korea"
+happy12$country[happy12$country == "Congo"] <- "Republic of Congo" 
+happy12$country[happy12$country == "Congo, Dem. Rep. of the"] <- "Democratic Republic of the Congo"
 happy16 <- select(happy16, Country, Region, Happy.Planet.Index, X.GDP.capita...PPP.. )
 names(happy16) <- c("country","region","HPI16", "GDP16")
 happy16$country <- as.character(happy16$country)
@@ -59,13 +65,19 @@ var <- select (variables, country, year, Healthy.life.expectancy.at.birth, Perce
 names(var) <- c("country", "year", "lifeExpect", "corruption") 
 var$year <- as.character(var$year)
 var$country <- as.character(var$country)
+var$country[var$country == "Congo (Brazzaville)"] <- "Republic of Congo" 
+var$country[var$country == "Congo (Kinshasa)"] <- "Democratic Republic of the Congo"
+var$country[var$country == "Hong Kong S.A.R. of China"] <- "Hong Kong"
+var$country[var$country == "United States"] <- "United States of America"
+var$country[var$country == "Palestinian Territories"] <- "Palestine"
 
 happy <- full_join(x=happy16, y=happy12, by = "country")
 happy <- full_join(x=happy, y=happy09, by = "country")
+happy$country[happy09$country == "Burma"] <- "Myanmar"
 happy$GDP09 <- parse_number(happy$GDP09)
 happy$GDP12 <- parse_number(happy$GDP12)
 happy$GDP16 <- parse_number(happy$GDP16)
-happy <- happy[complete.cases(happy), ]
+#happy <- happy[complete.cases(happy), ]
 happy <- gather(data=happy, key = year, value = Index, 3:8)
 happy <- separate(happy, year, into= c("variable", "year"), sep = -3)
 happy$year<- paste0("20", happy$year)
@@ -82,31 +94,29 @@ ggplot() +
   geom_polygon( data=World, aes(x=long, y=lat, group=group),
                 color="black", fill="lightblue" )
 names(World) <- c("long", "lat", "group", "order", "country", "subregion")
-World$Country[World$country == "USA"] <- "United States of America" 
-World$Country[World$country == "UK"] <- "United Kingdom" 
-World$Country[World$subregion == "Hong Kong"] <- "Hong Kong" 
-World$Country[World$subregion == "Northern Cyprus"] <- "North Cyprus" 
-World$Country[World$country == "Trinidad" |World$country == "Tobago" ] <- "Trinidad and Tobago" 
-MergedData <- inner_join(World, happy, by = "country")
-
+World$country[World$country == "USA"] <- "United States of America" 
+World$country[World$country == "UK"] <- "United Kingdom" 
+World$country[World$subregion == "Hong Kong"] <- "Hong Kong" 
+World$country[World$country == "Trinidad" |World$country == "Tobago" ] <- "Trinidad and Tobago" 
+final <- full_join(World, happy, by = "country")
 final09 <- filter(happy, year == "2009")
 final12 <- filter(happy, year == "2012")
 final16 <- filter(happy, year == "2016")
 
-map09 <- inner_join(World, final09, by = "country")
-map12 <- inner_join(World, final12, by = "country")
-map16 <- inner_join(World, final16, by = "country")
+map09 <- full_join(World, final09, by = "country")
+map12 <- full_join(World, final12, by = "country")
+map16 <- full_join(World, final16, by = "country")
 ```
 ```{r}
 p <- ggplot()
-GDPMap15 <- p + geom_polygon( data=map09, 
+GDPMap09 <- p + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = GDP), 
           color="white", size = 0.2) + scale_fill_gradientn(colours = rainbow(6))
-happyMap15 <- p + geom_polygon( data=map09, 
+happyMap09 <- p + geom_polygon( data=map09, 
           aes(x=long, y=lat, group=group, fill = HPI), 
           color="white", size = 0.2) + scale_fill_gradientn(colours = rainbow(6))
-GDPMap15
-happyMap15
+GDPMap09
+happyMap09
 
 ```
  
