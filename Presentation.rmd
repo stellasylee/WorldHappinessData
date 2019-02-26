@@ -30,8 +30,6 @@ To study our questions, we used data from different sources, as numerated below:
 
 We used data from 2009, 2012 and 2016 because those were the years for which Happy Planet Index data were available. Moreover, the three time periods show a general trends taking place over a decade.
 
-## Interactive Map for 2009
-
 ```{r, warning = FALSE, message = FALSE}
 library(plotly)
 library(ggplot2)
@@ -107,30 +105,6 @@ final09 <- filter(happy, year == "2009")
 map09 <- full_join(World, final09, by = "country")
 # give state boundaries a white border
 l <- list(color = toRGB("white"), width = 2)
-# specify some map projection/options
-g <- list(
-  scope = 'world',
-  projection = list(type = 'Mercator'),
-  showlakes = TRUE,
-  showcountries = TRUE,
-  lakecolor = toRGB('white')
-)
-p <- plot_geo(map09, lat = ~lat, lon = ~long, locationmode = 'country names') %>%
-  add_trace(
-    z = ~HPI, locations = ~country,
-    color = ~HPI, colors = 'Purples'
-  ) %>%
-  add_markers(
-    text = ~paste(country, paste("HPI:", HPI), paste("GDP: ", GDP), 
-                  paste("Life Expectancy: ", lifeExpect), paste("Corruption: ", corruption), sep = "<br />"),
-    color = ~GDP, symbol = I("square"), size = I(8), hoverinfo = "text"
-  ) %>%
-  colorbar(title = "Happy Planet Index") %>%
-  layout(
-    title = 'Happy Planet Index (2009)',
-    geo = g
-  )
-p
 ```
 ## Happiness, GDP per capita, Life Expectancy, and Corruption for 2009
 
