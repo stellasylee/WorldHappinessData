@@ -11,12 +11,13 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 #install.packages("plotly")
+#install.packages("scatterplot3d")
+library(plotly)
 library(ggplot2)
 library(readr)
 library(dplyr)
 library(tidyr)
-library(maps)     # Provides latitude and longitude data for various maps
-library(plotly)
+library(maps) 
 ```
 
 ## Upload data
