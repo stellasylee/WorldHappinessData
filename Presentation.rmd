@@ -29,8 +29,8 @@ To study our questions, we used data from different sources, as numerated below:
 - Corruption: World Happiness Report
 
 We used data from 2009, 2012 and 2016 because those were the years for which Happy Planet Index data were available. Moreover, the three time periods show a general trends taking place over a decade.
-  
-## Map Plotting Happiness, GDP per capita, Life Expectancy, and Corruption for 2009
+
+## Interactive Map for 2009
 
 ```{r, warning = FALSE, message = FALSE}
 library(plotly)
@@ -105,6 +105,36 @@ World$country[World$country == "Trinidad" | World$country == "Tobago" ] <- "Trin
 # Join the map, happiness data for visualization
 final09 <- filter(happy, year == "2009")
 map09 <- full_join(World, final09, by = "country")
+# give state boundaries a white border
+l <- list(color = toRGB("white"), width = 2)
+# specify some map projection/options
+g <- list(
+  scope = 'world',
+  projection = list(type = 'Mercator'),
+  showlakes = TRUE,
+  showcountries = TRUE,
+  lakecolor = toRGB('white')
+)
+p <- plot_geo(map09, lat = ~lat, lon = ~long, locationmode = 'country names') %>%
+  add_trace(
+    z = ~HPI, locations = ~country,
+    color = ~HPI, colors = 'Purples'
+  ) %>%
+  add_markers(
+    text = ~paste(country, paste("HPI:", HPI), paste("GDP: ", GDP), 
+                  paste("Life Expectancy: ", lifeExpect), paste("Corruption: ", corruption), sep = "<br />"),
+    color = ~GDP, symbol = I("square"), size = I(8), hoverinfo = "text"
+  ) %>%
+  colorbar(title = "Happy Planet Index") %>%
+  layout(
+    title = 'Happy Planet Index (2009)',
+    geo = g
+  )
+p
+```
+## Happiness, GDP per capita, Life Expectancy, and Corruption for 2009
+
+```{r, warning = FALSE, message = FALSE}
 GDPMap09 <- ggplot() + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = log(GDP)), color="white", size = 0.2) +
   scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
@@ -138,26 +168,27 @@ subplot(
 ))
 ```
 
-## Interactive Map
-```{r}
-
-```
-
 ## Scatterplot of Happiness vs GDP 
+
 ```{r}
 ggplot(data=final09)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
 ```
+
 ## Scatterplot of Happiness vs Life Expectancy
+
 ```{r}
 ggplot(data=final09)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
 ```
 
 ## 3D Scatterplot
+
 ```{r}
 region <- as.numeric(final09$region)
 scatterplot3d(log(final09$GDP), final09$lifeExpect, final09$HPI, color = region, type = "h", main="3D Scatter Plot", xlab = "GDP (logged)", ylab = "Life Expectancy", zlab = "Happiness")
 ```
+
 ## Happiness by Year
+
 ```{r}
 ggplot(data=happy)+  geom_point(aes(x=year, y=HPI, colour = region))
 ```
