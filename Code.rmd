@@ -122,33 +122,42 @@ map12 <- full_join(World, final12, by = "country")
 map16 <- full_join(World, final16, by = "country")
 ```
 
-# GDP and HPI
+# General Maps
 ```{r}
-# ggplot visualization
 GDPMap09 <- ggplot() + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = log(GDP)), color="white", size = 0.2) +
-  scale_fill_gradientn(name= "GDP per capita", colours = rainbow(7))+
-  labs(title = "GDP (2009)")
+  scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
 
 lifeMap09 <- ggplot() + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = lifeExpect), 
           color="white", size = 0.2) + 
-  scale_fill_gradientn(name= "Life expectancy at birth", colours = rainbow(7))+
-  labs(title = "Life Expectancy (2009)")
+  scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
 
 corrupMap09 <- ggplot() + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = corruption), 
           color="white", size = 0.2) + 
-  scale_fill_gradientn(name = "corruption", colours = rainbow(7)) +
-  labs(title= "Corruption (2009)")  
+  scale_fill_gradientn( colours = rainbow(7)) +guides(fill=FALSE)
+
 happyMap09 <- ggplot() + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = HPI), 
           color="white", size = 0.2) + 
-  scale_fill_gradientn(name = "HPI", colours = rainbow(7)) +
-  labs(title= "HPI (2009)")
+  scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
+happyMap09
 
+map09<- subplot(
+  ggplotly(GDPMap09),
+  ggplotly(happyMap09),
+  ggplotly(lifeMap09),
+  ggplotly(corrupMap09),
+  nrows = 2, shareX = TRUE, shareY = TRUE, titleY = FALSE, titleX = FALSE
+) %>% layout(title = "Happy Planet Index 2009 ", annotations = list(
+  list(yanchor = "middle", xanchor = "left", align = "center",x= 0.15, y = 0.54, text = "GDP per capita",showarrow=FALSE,xref = "paper", yref="paper"),
+  list(yanchor = "middle", xanchor = "right", align = "center",x= 0.75, y = 0.54, text = "HPI",showarrow=FALSE,xref = "paper", yref="paper"),
+  list(yanchor = "middle", xanchor = "left", align = "center",x=0.15, y = 0.0, text = "Life Expectancy",showarrow=FALSE,xref = "paper", yref="paper"),
+  list(yanchor = "middle", xanchor = "right", align = "center",x=0.8, y = 0.0, text = "Corruption",showarrow=FALSE,xref = "paper", yref="paper")
+))
+map09
 ```
-
 ```{r}
 maps09 <- subplot(
   ggplotly(GDPMap09),
