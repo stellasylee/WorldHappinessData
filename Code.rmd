@@ -145,36 +145,6 @@ map09<- subplot(
 ))
 map09
 ```
-# Interactive map for every variables
-```{r}
-# give state boundaries a white border
-l <- list(color = toRGB("white"), width = 2)
-# specify some map projection/options
-g <- list(
-  scope = 'world',
-  projection = list(type = 'Mercator'),
-  showlakes = TRUE,
-  showcountries = TRUE,
-  lakecolor = toRGB('white')
-)
-
-p <- plot_geo(map09, lat = ~lat, lon = ~long, locationmode = 'country names') %>%
-  add_trace(
-    z = ~HPI, locations = ~country,
-    color = ~HPI, colors = 'Purples'
-  ) %>%
-  add_markers(
-    text = ~paste(country, paste("HPI:", HPI), paste("GDP: ", GDP), 
-                  paste("Life Expectancy: ", lifeExpect), paste("Corruption: ", corruption), sep = "<br />"),
-    color = ~GDP, symbol = I("square"), size = I(8), hoverinfo = "text"
-  ) %>%
-  colorbar(title = "Happy Planet Index") %>%
-  layout(
-    title = 'Happy Planet Index (2009)',
-    geo = g
-  )
-p
-```
  
 # Scatterplots
 ```{r}
