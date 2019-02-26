@@ -10,12 +10,13 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
+#install.packages("plotly")
 library(ggplot2)
 library(readr)
 library(dplyr)
 library(tidyr)
 library(maps)     # Provides latitude and longitude data for various maps
+library(plotly)
 ```
 
 ## Research Question
@@ -36,8 +37,6 @@ happy09 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappines
 happy12 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/2012HPI.csv")
 happy16 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/2016HPI.csv")
 variables <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/OtherVariables.csv")
-
-
 ```
 
 ## Data Cleaning
@@ -110,7 +109,7 @@ names(World) <- c("long", "lat", "group", "order", "country", "subregion")
 World$country[World$country == "USA"] <- "United States of America" 
 World$country[World$country == "UK"] <- "United Kingdom" 
 World$country[World$subregion == "Hong Kong"] <- "Hong Kong" 
-World$country[World$country == "Trinidad" |World$country == "Tobago" ] <- "Trinidad and Tobago" 
+World$country[World$country == "Trinidad" | World$country == "Tobago" ] <- "Trinidad and Tobago" 
 
 # Join the map, happiness data for visualization
 final <- full_join(World, happy, by = "country")
@@ -125,15 +124,64 @@ map16 <- full_join(World, final16, by = "country")
 
 # GDP and HPI
 ```{r}
-p <- ggplot()
-GDPMap09 <- p + geom_polygon(data=map09, 
-          aes(x=long, y=lat, group=group, fill = GDP), 
-          color="white", size = 0.2) + scale_fill_gradientn(colours = rainbow(6))
-happyMap09 <- p + geom_polygon( data=map09, 
-          aes(x=long, y=lat, group=group, fill = HPI), 
-          color="white", size = 0.2) + scale_fill_gradientn(colours = rainbow(6))
-GDPMap09
-happyMap09
+# ggplot visualization
+GDPMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = log(GDP)), color="white", size = 0.2) +
+  scale_fill_gradientn(name= "GDP per capita", colours = rainbow(7))+
+  labs(title = "GDP (2009)")
 
+lifeMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = lifeExpect), 
+          color="white", size = 0.2) + 
+  scale_fill_gradientn(name= "Life expectancy at birth", colours = rainbow(7))+
+  labs(title = "Life Expectancy (2009)")
+
+corrupMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = corruption), 
+          color="white", size = 0.2) + 
+  scale_fill_gradientn(name = "corruption", colours = rainbow(7)) +
+  labs(title= "Corruption (2009)")  
+happyMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = HPI), 
+          color="white", size = 0.2) + 
+  scale_fill_gradientn(name = "HPI", colours = rainbow(7)) +
+  labs(title= "HPI (2009)")
+
+```
+
+```{r}
+maps09 <- subplot(
+  ggplotly(GDPMap09),
+  ggplotly(happyMap09),
+  ggplotly(lifeMap09),
+  ggplotly(corrupMap09),
+  nrows = 2, shareX = TRUE, shareY = TRUE,
+  titleY = FALSE, titleX = FALSE, margin = 0.5
+) 
+
+maps09
+```
+
+```{r}
+g <- list(
+  scope = 'world',
+  projection = list(type = 'equirectangular'),
+  lakecolor = toRGB('white')
+)
+
+p <- plot_geo(map09, lat = ~lat, lon = ~long) %>%
+  add_trace(
+    z = ~HPI, text = ~paste(country), 
+    locations = g, locationmode = 'country names'
+  )%>%
+  add_markers(
+    text = ~paste(country, paste("HPI:", HPI), sep = "<br />"),
+    color = ~HPI, symbol = I("square"), size = I(8), hoverinfo = "text"
+  ) %>%
+  colorbar(title = "Happy Planet Index") %>%
+  layout(
+    title = 'Happy Planet Index (2009)', geo = g
+  )
+p
 ```
  
