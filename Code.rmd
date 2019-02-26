@@ -198,20 +198,28 @@ p
 ```{r}
 #scatterplots for Happiness (HPI) vs GDP, Life Expectancy (lifeExpect) and corruption for three years
 ggplot(data=final09)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
-ggplot(data=final09)+  geom_point(aes(x=GDP, y=HPI, colour = region))
+ggplot(data=final09)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
 ggplot(data=final09)+  geom_point(aes(x=corruption, y=HPI, colour = region))
 
 ggplot(data=final12)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
-ggplot(data=final12)+  geom_point(aes(x=GDP, y=HPI, colour = region))
+ggplot(data=final12)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
 ggplot(data=final12)+  geom_point(aes(x=corruption, y=HPI, colour = region))
 
 ggplot(data=final16)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
-ggplot(data=final16)+  geom_point(aes(x=GDP, y=HPI, colour = region))
+ggplot(data=final16)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
 ggplot(data=final16)+  geom_point(aes(x=corruption, y=HPI, colour = region))
 
 #Happiness by year
 ggplot(data=happy)+  geom_point(aes(x=year, y=HPI, colour = region))
 
+#scatterplot of life expectancy (lifeExpect) and GDP
+ggplot(data=final16)+  geom_point(aes(x=log(GDP), y=lifeExpect, colour = region))
 #3D scatterplot with Happiness predicted by GDP and life expectancy (lifeExpect)
-scatterplot3d(final09$GDP, final09$lifeExpect, final09$HPI, color = region, type = "h", main="3D Scatter Plot", xlab = "GDP", ylab = "Life Expectancy", zlab = "Happiness")
+scatterplot3d(log(final09$GDP), final09$lifeExpect, final09$HPI, color = region, type = "h", main="3D Scatter Plot", xlab = "GDP (logged)", ylab = "Life Expectancy", zlab = "Happiness")
 ```
+We used log GDP here because most of the data lies under $25000 per capita but there exist outliers extending to more than $75000 per capita.The relationship between log(GDP) and HPI seems weakly linear, with high variance.
+LifeExpect and HPI seem to have a linear relationship as well for all the three years. While this relationship is stronger than that of HPI and log(GDP), there is a lot of variance.
+Corruption and HPI seem to be uncorrelated, as most countries have very high levels of corruption but varying levels of happiness.
+This makes us believe that since log(GDP) and lifeExpect are strongly related (as can be observedfor the graph), both variables are confounding HPI's relationship with the other. So, we created a 3D scatterplot to visualize their relationship together. The graph shows a strong relationship between the three variables, with countries from Europe (region marked by green) being the exception- they have high GDP and life expectancy but medium levels of happiness.
+Finally, the dotplot of happiness (HPI) by year depicts that, while the variance for HPI was higher in 2009 and 2012, countries in 2016 were on general less happy. Moreover, countries from the same region had similar levels of happiness.
+Segregating the data by region allowed us to observe the relationship between each variable and region. Region was closely associated with GDP, happiness and life expectancy. While corruption was not as strongly associated with region, countries from some regions depicted similar levels of corruption.
