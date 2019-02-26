@@ -19,18 +19,6 @@ library(maps)     # Provides latitude and longitude data for various maps
 library(plotly)
 ```
 
-## Research Question
-How does a country’s happiness score get influenced by the following factors:
-  1.  GDP per capita
-  2. Life Expectancy
-  3. Trust in the government
-  4. Region
-
-Does time have an effect on this?
-
-Data Source: World Happiness Report 
-https://www.kaggle.com/unsdsn/world-happiness
-
 ## Upload data
 ```{r}
 happy09 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/2009HPI.csv")
@@ -87,7 +75,6 @@ happy$country[happy09$country == "Burma"] <- "Myanmar"
 happy$GDP09 <- parse_number(happy$GDP09)
 happy$GDP12 <- parse_number(happy$GDP12)
 happy$GDP16 <- parse_number(happy$GDP16)
-#happy <- happy[complete.cases(happy), ]
 ```
 
 ## Tidy Data
@@ -122,7 +109,7 @@ map12 <- full_join(World, final12, by = "country")
 map16 <- full_join(World, final16, by = "country")
 ```
 
-# General Maps
+## General Maps
 ```{r}
 GDPMap09 <- ggplot() + geom_polygon(data=map09, 
           aes(x=long, y=lat, group=group, fill = log(GDP)), color="white", size = 0.2) +
@@ -142,7 +129,6 @@ happyMap09 <- ggplot() + geom_polygon(data=map09,
           aes(x=long, y=lat, group=group, fill = HPI), 
           color="white", size = 0.2) + 
   scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
-happyMap09
 
 map09<- subplot(
   ggplotly(GDPMap09),
@@ -158,65 +144,62 @@ map09<- subplot(
 ))
 map09
 ```
+# Interactive map for every variables
 ```{r}
-maps09 <- subplot(
-  ggplotly(GDPMap09),
-  ggplotly(happyMap09),
-  ggplotly(lifeMap09),
-  ggplotly(corrupMap09),
-  nrows = 2, shareX = TRUE, shareY = TRUE,
-  titleY = FALSE, titleX = FALSE, margin = 0.5
-) 
-
-maps09
-```
-
-```{r}
+# give state boundaries a white border
+l <- list(color = toRGB("white"), width = 2)
+# specify some map projection/options
 g <- list(
   scope = 'world',
-  projection = list(type = 'equirectangular'),
+  projection = list(type = 'Mercator'),
+  showlakes = TRUE,
+  showcountries = TRUE,
   lakecolor = toRGB('white')
 )
 
-p <- plot_geo(map09, lat = ~lat, lon = ~long) %>%
+p <- plot_geo(map09, lat = ~lat, lon = ~long, locationmode = 'country names') %>%
   add_trace(
-    z = ~HPI, text = ~paste(country), 
-    locations = g, locationmode = 'country names'
-  )%>%
+    z = ~HPI, locations = ~country,
+    color = ~HPI, colors = 'Purples'
+  ) %>%
   add_markers(
-    text = ~paste(country, paste("HPI:", HPI), sep = "<br />"),
-    color = ~HPI, symbol = I("square"), size = I(8), hoverinfo = "text"
+    text = ~paste(country, paste("HPI:", HPI), paste("GDP: ", GDP), 
+                  paste("Life Expectancy: ", lifeExpect), paste("Corruption: ", corruption), sep = "<br />"),
+    color = ~GDP, symbol = I("square"), size = I(8), hoverinfo = "text"
   ) %>%
   colorbar(title = "Happy Planet Index") %>%
   layout(
-    title = 'Happy Planet Index (2009)', geo = g
+    title = 'Happy Planet Index (2009)',
+    geo = g
   )
 p
 ```
  
-## Scatterplots
+# Scatterplots
 ```{r}
 #scatterplots for Happiness (HPI) vs GDP, Life Expectancy (lifeExpect) and corruption for three years
-ggplot(data=final09)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
-ggplot(data=final09)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
-ggplot(data=final09)+  geom_point(aes(x=corruption, y=HPI, colour = region))
+ggplot(data=final09)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region)) + labs(title = "Happiness vs Life Expectancy 2009", x = "Life Expectancy", y = "Happiness Index")
+ggplot(data=final09)+  geom_point(aes(x=log(GDP), y=HPI, colour = region)) + labs(title = "Happiness vs log(GDP per capita) 2009", x = "log(GDP per capita)", y = "Happiness Index")
+ggplot(data=final09)+  geom_point(aes(x=corruption, y=HPI, colour = region)) + labs(title = "Happiness vs Corruption 2009", x = "Corruption", y = "Happiness Index")
 
-ggplot(data=final12)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
-ggplot(data=final12)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
-ggplot(data=final12)+  geom_point(aes(x=corruption, y=HPI, colour = region))
+ggplot(data=final12)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region)) + labs(title = "Happiness vs Life Expectancy 2012", x = "Life Expectancy", y = "Happiness Index")
+ggplot(data=final12)+  geom_point(aes(x=log(GDP), y=HPI, colour = region)) + labs(title = "Happiness vs log(GDP per capita) 2012", x = "log(GDP per capita)", y = "Happiness Index")
+ggplot(data=final12)+  geom_point(aes(x=corruption, y=HPI, colour = region))  + labs(title = "Happiness vs Corruption 2012", x = "Corruption", y = "Happiness Index")
 
-ggplot(data=final16)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
-ggplot(data=final16)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
-ggplot(data=final16)+  geom_point(aes(x=corruption, y=HPI, colour = region))
+ggplot(data=final16)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region)) + labs(title = "Happiness vs Life Expectancy 2016", x = "Life Expectancy", y = "Happiness Index")
+ggplot(data=final16)+  geom_point(aes(x=log(GDP), y=HPI, colour = region)) + labs(title = "Happiness vs log(GDP per capita) 2016", x = "log(GDP per capita)", y = "Happiness Index")
+ggplot(data=final16)+  geom_point(aes(x=corruption, y=HPI, colour = region))  + labs(title = "Happiness vs Corruption 2016", x = "Corruption", y = "Happiness Index")
 
 #Happiness by year
-ggplot(data=happy)+  geom_point(aes(x=year, y=HPI, colour = region))
+ggplot(data=happy)+  geom_point(aes(x=year, y=HPI, colour = region)) +  + labs(title = "Happiness by year", x = "Year", y = "Happiness Index")
 
 #scatterplot of life expectancy (lifeExpect) and GDP
+region <- as.numeric(final09$region)
 ggplot(data=final16)+  geom_point(aes(x=log(GDP), y=lifeExpect, colour = region))
 #3D scatterplot with Happiness predicted by GDP and life expectancy (lifeExpect)
 scatterplot3d(log(final09$GDP), final09$lifeExpect, final09$HPI, color = region, type = "h", main="3D Scatter Plot", xlab = "GDP (logged)", ylab = "Life Expectancy", zlab = "Happiness")
 ```
+
 We used log GDP here because most of the data lies under $25000 per capita but there exist outliers extending to more than $75000 per capita.The relationship between log(GDP) and HPI seems weakly linear, with high variance.
 LifeExpect and HPI seem to have a linear relationship as well for all the three years. While this relationship is stronger than that of HPI and log(GDP), there is a lot of variance.
 Corruption and HPI seem to be uncorrelated, as most countries have very high levels of corruption but varying levels of happiness.
