@@ -1,56 +1,163 @@
 ---
-title: "World Happiness"
-author: "Stella Lee Tanvi Jindal"
-output: slidy_presentation
+title: "What makes a country happy?"
+author: "Stella Lee, Tanvi Jindal"
+output:
+  ioslides_presentation: default
+  slidy_presentation: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Introduction Slide
+## Research Questions
+We want to study how a country's happiness can be influenced by various measures of a country's attributes.
 
-- Bulleted list
-- Bullet 2
-    - Sub-bullet
-    
-1. Numbered list
-2. include a **bold** word or an *italicized* word
+- How does a country’s happiness index get influenced by the following factors:
+    - GDP per capita
+    - Life Expectancy
+    - Government Corruption
+    - Region
+- How does time affect this?
 
-## Nice Visuals (notice plotly is compatible)
+## Source
+To study our questions, we used data from different sources, as numerated below:
+
+- Happiness data: Happy Planet Index
+- GDP per Capita (PPP): Happy Planet Index
+- Life Expectancy: World Happiness Report
+- Corruption: World Happiness Report
+
+We used data from 2009, 2012 and 2016 because those were the years for which Happy Planet Index data were available. Moreover, the three time periods show a general trends taking place over a decade.
+  
+## Map Plotting Happiness, GDP per capita, Life Expectancy, and Corruption for 2009
 
 ```{r, warning = FALSE, message = FALSE}
-install.packages("kableExtra")
 library(plotly)
-library(kableExtra)
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(maps) 
+#install.packages("scatterplot3d")
+library(scatterplot3d)
 
-p <- ggplot(txhousing, aes(date, median)) +
-  geom_line(aes(group = city), alpha = 0.2)
+happy09 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/2009HPI.csv")
+happy12 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/2012HPI.csv")
+happy16 <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/2016HPI.csv")
+variables <- read.csv("https://raw.githubusercontent.com/stellasylee/WorldHappinessData/master/Data/OtherVariables.csv")
+# 2009
+happy09 <- select(happy09, country, HPI, GDP.per.capita....PPP.)
+names(happy09) <- c("country", "HPI09", "GDP09")
+happy09$country <- as.character(happy09$country)
+happy09$country[happy09$country == "Burma"] <- "Myanmar"
+happy09$country[happy09$country == "Korea"] <- "South Korea"
+happy09$country[happy09$country == "Congo"] <- "Republic of Congo" 
+happy09$country[happy09$country == "Congo, Dem. Rep. of the"] <- "Democratic Republic of the Congo"
+
+# 2012
+happy12 <- select(happy12, Country, Happy.Planet.Index, GDP.capita...PPP.)
+names(happy12) <- c("country", "HPI12", "GDP12")
+happy12$country <- as.character(happy12$country)
+happy12$country[happy12$country == "Korea"] <- "South Korea"
+happy12$country[happy12$country == "Congo"] <- "Republic of Congo" 
+happy12$country[happy12$country == "Congo, Dem. Rep. of the"] <- "Democratic Republic of the Congo"
+
+# 2016
+happy16 <- select(happy16, Country, Region, Happy.Planet.Index, X.GDP.capita...PPP.. )
+names(happy16) <- c("country","region","HPI16", "GDP16")
+happy16$country <- as.character(happy16$country)
+
+# variables
+variables <- filter(variables, year == "2009" | year == "2012" | year == "2016")
+var <- select (variables, country, year, Healthy.life.expectancy.at.birth, Perceptions.of.corruption)
+names(var) <- c("country", "year", "lifeExpect", "corruption") 
+var$year <- as.character(var$year)
+var$country <- as.character(var$country)
+var$country[var$country == "Congo (Brazzaville)"] <- "Republic of Congo" 
+var$country[var$country == "Congo (Kinshasa)"] <- "Democratic Republic of the Congo"
+var$country[var$country == "Hong Kong S.A.R. of China"] <- "Hong Kong"
+var$country[var$country == "United States"] <- "United States of America"
+var$country[var$country == "Palestinian Territories"] <- "Palestine"
+
+# Combine
+happy <- full_join(x=happy16, y=happy12, by = "country")
+happy <- full_join(x=happy, y=happy09, by = "country")
+happy$country[happy09$country == "Burma"] <- "Myanmar"
+happy$GDP09 <- parse_number(happy$GDP09)
+happy$GDP12 <- parse_number(happy$GDP12)
+happy$GDP16 <- parse_number(happy$GDP16)
+
+happy <- gather(data = happy, key = year, value = Index, 3:8)
+happy <- separate(happy, year, into = c("variable", "year"), sep = -3)
+happy$year<- paste0("20", happy$year)
+happy <- spread (data = happy, key = variable, value = Index)
+happy <- left_join(x = happy, y = var, by = c("country", "year"))
+
+World <- map_data("world")
+# Change the column and row for matching with the Happiness dataset
+names(World) <- c("long", "lat", "group", "order", "country", "subregion")
+World$country[World$country == "USA"] <- "United States of America" 
+World$country[World$country == "UK"] <- "United Kingdom" 
+World$country[World$subregion == "Hong Kong"] <- "Hong Kong" 
+World$country[World$country == "Trinidad" | World$country == "Tobago" ] <- "Trinidad and Tobago" 
+
+# Join the map, happiness data for visualization
+final09 <- filter(happy, year == "2009")
+map09 <- full_join(World, final09, by = "country")
+GDPMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = log(GDP)), color="white", size = 0.2) +
+  scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
+
+lifeMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = lifeExpect), 
+          color="white", size = 0.2) + 
+  scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
+
+corrupMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = corruption), 
+          color="white", size = 0.2) + 
+  scale_fill_gradientn( colours = rainbow(7)) +guides(fill=FALSE)
+
+happyMap09 <- ggplot() + geom_polygon(data=map09, 
+          aes(x=long, y=lat, group=group, fill = HPI), 
+          color="white", size = 0.2) + 
+  scale_fill_gradientn(colours = rainbow(7))+guides(fill=FALSE)
 
 subplot(
-  p, ggplotly(p, tooltip = "city"), 
-  ggplot(txhousing, aes(date, median)) + geom_bin2d(),
-  ggplot(txhousing, aes(date, median)) + geom_hex(),
-  nrows = 2, shareX = TRUE, shareY = TRUE,
-  titleY = FALSE, titleX = FALSE
-)
-
+  ggplotly(GDPMap09),
+  ggplotly(happyMap09),
+  ggplotly(lifeMap09),
+  ggplotly(corrupMap09),
+  nrows = 2, shareX = TRUE, shareY = TRUE, titleY = FALSE, titleX = FALSE
+) %>% layout(title = "Happy Planet Index 2009 ", annotations = list(
+  list(yanchor = "middle", xanchor = "left", align = "center",x= 0.15, y = 0.54, text = "GDP per capita",showarrow=FALSE,xref = "paper", yref="paper"),
+  list(yanchor = "middle", xanchor = "right", align = "center",x= 0.75, y = 0.54, text = "HPI",showarrow=FALSE,xref = "paper", yref="paper"),
+  list(yanchor = "middle", xanchor = "left", align = "center",x=0.15, y = 0.0, text = "Life Expectancy",showarrow=FALSE,xref = "paper", yref="paper"),
+  list(yanchor = "middle", xanchor = "right", align = "center",x=0.8, y = 0.0, text = "Corruption",showarrow=FALSE,xref = "paper", yref="paper")
+))
 ```
 
-## Data Display (kable produces nice html tables)
-
+## Interactive Map
 ```{r}
-knitr::kable(head(txhousing, 50)) %>%
-  kable_styling(bootstrap_options = c("striped", "hover")) %>%
-  scroll_box(width = "100%", height = "500px")
 
-## See: https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html for more
 ```
 
-## $\LaTeX$ typesetting
+## Scatterplot of Happiness vs GDP 
+```{r}
+ggplot(data=final09)+  geom_point(aes(x=log(GDP), y=HPI, colour = region))
+```
+## Scatterplot of Happiness vs Life Expectancy
+```{r}
+ggplot(data=final09)+  geom_point(aes(x=lifeExpect, y=HPI, colour = region))
+```
 
-- In-line equations: $\hat{y} = X\beta + \epsilon$
-
-- Out-of-line equations:
-
-$$\sigma^2 = \frac{1}{N}\sum_{i=1}^N (x_i - \mu)^2$$
+## 3D Scatterplot
+```{r}
+region <- as.numeric(final09$region)
+scatterplot3d(log(final09$GDP), final09$lifeExpect, final09$HPI, color = region, type = "h", main="3D Scatter Plot", xlab = "GDP (logged)", ylab = "Life Expectancy", zlab = "Happiness")
+```
+## Happiness by Year
+```{r}
+ggplot(data=happy)+  geom_point(aes(x=year, y=HPI, colour = region))
+```
